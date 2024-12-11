@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar {
+      background: #2c3e50;
+      width: 250px;
+      color: #ecf0f1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      left: 0;
+      top: 0;
+      padding-top: 20px;
+    }
+
+    .sidebar h2 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #ecf0f1;
+      font-size: 18px;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+
+    .sidebar ul li a:hover {
+      background: #34495e;
+    }
+
+    .sidebar ul li a i {
+      margin-right: 10px;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      background: #fff;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-content h1 {
+      color: #2c3e50;
+      font-size: 28px;
+    }
+
+    .placeholder {
+      background: #ecf0f1;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 8px;
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Admin Dashboard</h2>
+      <ul>
+        <li><a href="alluser.html"><i class="fas fa-users"></i> Check All Registered Users</a></li>
+        <li><a href="withdrawal.html"><i class="fas fa-money-bill-wave"></i> Check Withdrawals</a></li>
+        <li><a href="#investments"><i class="fas fa-chart-line"></i> Check Investments</a></li>
+        <li><a href="gift-card-withdrawal.html"><i class="fas fa-gift"></i> Gift Card Withdrawals</a></li>
+        <li><a href="giftcard.html"><i class="fas fa-qrcode"></i> Generate Gift Cards</a></li>
+        <li><a href="#other-links"><i class="fas fa-plus-circle"></i> Add More Links</a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <h1>Welcome to the Admin Portal</h1>
+      <div class="placeholder">
+        <p>This section displays the content of the selected link. Use the sidebar to navigate.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

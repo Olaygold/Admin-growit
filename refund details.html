@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Refund Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .container {
+      margin-top: 50px;
+    }
+    .user-card {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .user-card h5 {
+      font-size: 18px;
+    }
+    .history-section {
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Admin Refund Management</h1>
+
+    <!-- Active Refund Requests Section -->
+    <div id="userList"></div>
+
+    <!-- History Section -->
+    <div class="history-section" id="historySection" style="display: none;">
+      <h3>Refund History</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getDatabase, ref, get, update, set } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAELWzVQZiw2PxbNUT3-YK4a6KPHfYkdZ4",
+      authDomain: "work-98965.firebaseapp.com",
+      databaseURL: "https://work-98965-default-rtdb.firebaseio.com",
+      projectId: "work-98965",
+      storageBucket: "work-98965.appspot.com",
+      messagingSenderId: "755408416828",
+      appId: "1:755408416828:web:59f72561f27fb9ffa01339"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Function to fetch all refund requests and display user details
+    function fetchRefundRequests() {
+      get(ref(db, 'users/'))
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const users = snapshot.val();
+            const userListDiv = document.getElementById("userList");
+            userListDiv.innerHTML = ''; // Clear the previous user list
+            for (const userId in users) {
+              const user = users[userId];
+
+              // Loop through all refund requests
+              if (user.refundRequests) {
+                for (const refundId in user.refundRequests) {
+                  const refundRequest = user.refundRequests[refundId];
+                  const refundStatus = refundRequest.status;
+
+                  // Only show requests that are not marked as paid
+                  if (refundStatus !== "Paid") {
+                    // Create user card with bank details, total deposits, total withdrawals, and action buttons
+                    const userCard = document.createElement("div");
+                    userCard.classList.add("user-card");
+                    userCard.innerHTML = `
+                      <h5>User: ${userId}</h5>
+                      <p><strong>Email/UID:</strong> ${user.email || userId}</p>
+                      <p><strong>Refund Reason:</strong> ${refundRequest.reason}</p>
+                      <p><strong>Status:</strong> ${refundStatus}</p>
+                      <p><strong>Bank Details:</strong></p>
+                      <ul>
+                        <li><strong>Bank Name:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.bankName : 'Not Submitted'}</li>
+                        <li><strong>Account Name:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.accountName : 'Not Submitted'}</li>
+                        <li><strong>Account Number:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.accountNumber : 'Not Submitted'}</li>
+                      </ul>
+                      <p><strong>Total Deposits:</strong> ₦<span class="total-deposits">0</span></p>
+                      <p><strong>Total Withdrawals:</strong> ₦<span class="total-withdrawals">0</span></p>
+                      <p><strong>Number of Withdrawals:</strong> <span class="num-withdrawals">0</span></p>
+                      <button class="btn btn-success mark-paid-btn" data-user-id="${userId}" data-refund-id="${refundId}">Mark as Paid</button>
+                    `;
+                    userListDiv.appendChild(userCard);
+
+                    // Load total deposits for each user
+                    get(ref(db, `users/${userId}/deposits`))
+                      .then((depositSnapshot) => {
+                        if (depositSnapshot.exists()) {
+                          let totalDeposits = 0;
+                          const deposits = depositSnapshot.val();
+                          for (const depositId in deposits) {
+                            totalDeposits += deposits[depositId].amount;
+                          }
+                          userCard.querySelector(".total-deposits").textContent = totalDeposits;
+                        }
+                      })
+                      .catch(console.error);
+
+                    // Load total withdrawals and number of withdrawals for each user
+                    get(ref(db, `users/${userId}/withdrawals`))
+                      .then((withdrawalSnapshot) => {
+                        if (withdrawalSnapshot.exists()) {
+                          let totalWithdrawals = 0;
+                          const withdrawals = withdrawalSnapshot.val();
+                          const numWithdrawals = Object.keys(withdrawals).length;
+                          for (const withdrawalId in withdrawals) {
+                            totalWithdrawals += withdrawals[withdrawalId].withdrawalAmount;
+                          }
+                          userCard.querySelector(".total-withdrawals").textContent = totalWithdrawals;
+                          userCard.querySelector(".num-withdrawals").textContent = numWithdrawals;
+                        }
+                      })
+                      .catch(console.error);
+
+                    // Handle mark as paid
+                    userCard.querySelector(".mark-paid-btn").addEventListener("click", (e) => {
+                      const userId = e.target.getAttribute("data-user-id");
+                      const refundId = e.target.getAttribute("data-refund-id");
+
+                      // Mark the refund request as paid
+                      const refundRequestRef = ref(db, `users/${userId}/refundRequests/${refundId}`);
+                      update(refundRequestRef, {
+                        status: "Paid",
+                      })
+                        .then(() => {
+                          // Move the request to the history section
+                          const historyRef = ref(db, `users/${userId}/refundRequestsHistory/${refundId}`);
+                          get(refundRequestRef).then((snapshot) => {
+                            if (snapshot.exists()) {
+                              // Copy the request data to history
+                              set(historyRef, snapshot.val()).then(() => {
+                                // Delete the request from active refund requests
+                                set(ref(db, `users/${userId}/refundRequests/${refundId}`), null);
+
+                                // Refresh the list and history
+                                alert("Refund request marked as paid.");
+                                fetchRefundRequests();
+                                displayHistory();
+                              }).catch(console.error);
+                            }
+                          });
+                        })
+                        .catch(console.error);
+                    });
+                  }
+                }
+              }
+            }
+          }
+        })
+        .catch(console.error);
+    }
+
+    // Function to display the history of paid refund requests
+    function displayHistory() {
+      const historySection = document.getElementById("historySection");
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = ''; // Clear previous history
+
+      get(ref(db, 'users/'))
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const users = snapshot.val();
+
+            for (const userId in users) {
+              const user = users[userId];
+
+              if (user.refundRequestsHistory) {
+                for (const refundId in user.refundRequestsHistory) {
+                  const refundRequest = user.refundRequestsHistory[refundId];
+                  const refundStatus = refundRequest.status;
+
+                  if (refundStatus === "Paid") {
+                    // Create user card for paid refund requests
+                    const userCard = document.createElement("div");
+                    userCard.classList.add("user-card");
+                    userCard.innerHTML = `
+                      <h5>User: ${userId}</h5>
+                      <p><strong>Email/UID:</strong> ${user.email || userId}</p>
+                      <p><strong>Refund Reason:</strong> ${refundRequest.reason}</p>
+                      <p><strong>Status:</strong> ${refundStatus}</p>
+                      <p><strong>Bank Details:</strong></p>
+                      <ul>
+                        <li><strong>Bank Name:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.bankName : 'Not Submitted'}</li>
+                        <li><strong>Account Name:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.accountName : 'Not Submitted'}</li>
+                        <li><strong>Account Number:</strong> ${refundRequest.bankDetails ? refundRequest.bankDetails.accountNumber : 'Not Submitted'}</li>
+                      </ul>
+                      <p><strong>Total Deposits:</strong> ₦<span class="total-deposits">0</span></p>
+                      <p><strong>Total Withdrawals:</strong> ₦<span class="total-withdrawals">0</span></p>
+                      <p><strong>Number of Withdrawals:</strong> <span class="num-withdrawals">0</span></p>
+                    `;
+                    historyList.appendChild(userCard);
+
+                    // Load total deposits for each user in the history section
+                    get(ref(db, `users/${userId}/deposits`))
+                      .then((depositSnapshot) => {
+                        if (depositSnapshot.exists()) {
+                          let totalDeposits = 0;
+                          const deposits = depositSnapshot.val();
+                          for (const depositId in deposits) {
+                            totalDeposits += deposits[depositId].amount;
+                          }
+                          userCard.querySelector(".total-deposits").textContent = totalDeposits;
+                        }
+                      })
+                      .catch(console.error);
+
+                    // Load total withdrawals for each user in the history section
+                    get(ref(db, `users/${userId}/withdrawals`))
+                      .then((withdrawalSnapshot) => {
+                        if (withdrawalSnapshot.exists()) {
+                          let totalWithdrawals = 0;
+                          const withdrawals = withdrawalSnapshot.val();
+                          const numWithdrawals = Object.keys(withdrawals).length;
+                          for (const withdrawalId in withdrawals) {
+                            totalWithdrawals += withdrawals[withdrawalId].withdrawalAmount;
+                          }
+                          userCard.querySelector(".total-withdrawals").textContent = totalWithdrawals;
+                          userCard.querySelector(".num-withdrawals").textContent = numWithdrawals;
+                        }
+                      })
+                      .catch(console.error);
+                  }
+                }
+              }
+            }
+          }
+        })
+        .catch(console.error);
+
+      // Show the history section
+      historySection.style.display = "block";
+    }
+
+    // Call the function to fetch all refund requests
+    fetchRefundRequests();
+    displayHistory(); // Display history section as well
+  </script>
+</body>
+</html>

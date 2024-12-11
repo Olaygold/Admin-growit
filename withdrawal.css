@@ -1,0 +1,68 @@
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 20px;
+  color: #007bff;
+}
+
+/* Withdrawal List Styles */
+#withdrawals-list {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.withdrawal-item {
+  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+}
+
+.withdrawal-item:last-child {
+  border-bottom: none;
+}
+
+.withdrawal-item p {
+  margin: 5px 0;
+}
+
+/* Buttons */
+button {
+  margin-right: 10px;
+  padding: 8px 15px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:nth-child(1) {
+  background-color: #28a745; /* Green for Paid */
+}
+
+button:nth-child(2) {
+  background-color: #dc3545; /* Red for Failed */
+}
+
+/* No Withdrawal Found Message */
+#withdrawals-list p {
+  text-align: center;
+  color: #666;
+}
