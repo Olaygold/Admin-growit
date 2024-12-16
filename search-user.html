@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Search User</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Search User</h1>
+    <form id="searchForm" class="mb-4" style="display: none;">
+      <div class="input-group">
+        <input type="text" id="searchQuery" class="form-control" placeholder="Search by any user detail" required />
+        <button class="btn btn-primary" type="submit">Search</button>
+      </div>
+    </form>
+
+    <div id="userInfo" class="mt-4"></div>
+    <div id="loginMessage" class="mt-4"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAELWzVQZiw2PxbNUT3-YK4a6KPHfYkdZ4",
+      authDomain: "work-98965.firebaseapp.com",
+      databaseURL: "https://work-98965-default-rtdb.firebaseio.com",
+      projectId: "work-98965",
+      storageBucket: "work-98965.appspot.com",
+      messagingSenderId: "755408416828",
+      appId: "1:755408416828:web:59f72561f27fb9ffa01339"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Check if the user is authenticated and if they are the admin
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Check if the logged-in user is the admin
+        if (user.email === 'wtf@gmail.com') {
+          document.getElementById("loginMessage").innerHTML = `
+            <div class="alert alert-success">Welcome Admin!</div>
+          `;
+          document.getElementById("searchForm").style.display = 'block';  // Show the search form
+        } else {
+          document.getElementById("loginMessage").innerHTML = `
+            <div class="alert alert-danger">Access Denied: You are not authorized to access this page.</div>
+          `;
+        }
+      } else {
+        document.getElementById("loginMessage").innerHTML = `
+          <div class="alert alert-danger">You must be logged in to access this page.</div>
+        `;
+      }
+    });
+
+    // Handle search form submission
+    document.getElementById("searchForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const searchQuery = document.getElementById("searchQuery").value.trim().toLowerCase();
+      searchUser(searchQuery);
+    });
+
+    // Function to search user
+    async function searchUser(query) {
+      try {
+        const userRef = ref(db, "users");
+        const snapshot = await get(userRef);
+
+        if (!snapshot.exists()) {
+          displayError("No users found in the database.");
+          return;
+        }
+
+        const users = snapshot.val();
+        let foundUser = null;
+
+        // Search for the user by iterating over all users
+        for (const uid in users) {
+          const user = users[uid];
+          const fields = [
+            uid,
+            user.name?.toLowerCase(),
+            user.email?.toLowerCase(),
+            user.phoneNumber?.toLowerCase(),
+            user.referralCode?.toLowerCase()
+          ];
+
+          if (fields.some((field) => field?.includes(query))) {
+            foundUser = { uid, ...user };
+            break;
+          }
+        }
+
+        if (foundUser) {
+          displayUserInfo(foundUser);
+        } else {
+          displayError("No user found with the given query.");
+        }
+      } catch (error) {
+        console.error("Error searching user:", error);
+        displayError("Error searching user data. Please try again later.");
+      }
+    }
+
+    // Display user info
+    function displayUserInfo(user) {
+      const userInfoHTML = `
+        <div class="card">
+          <div class="card-header">
+            <strong>User Information</strong>
+          </div>
+          <div class="card-body">
+            <p><strong>Name:</strong> ${user.name || "N/A"}</p>
+            <p><strong>Email:</strong> ${user.email || "N/A"}</p>
+            <p><strong>Phone Number:</strong> ${user.phoneNumber || "N/A"}</p>
+            <p><strong>Balance:</strong> ${user.balance || 0} Naira</p>
+            <p><strong>Referral Code:</strong> ${user.referralCode || "N/A"}</p>
+            <p><strong>Commission Balance:</strong> ${user.commissionBalance || 0} Naira</p>
+            <p><strong>Gift Card Balance:</strong> ${user.giftCardBalance || 0} Naira</p>
+            <p><strong>UID:</strong> ${user.uid || "N/A"}</p>
+            <p><strong>Last Login:</strong> ${user.lastLogin || "N/A"}</p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("userInfo").innerHTML = userInfoHTML;
+    }
+
+    // Display error message
+    function displayError(message) {
+      document.getElementById("userInfo").innerHTML = `
+        <div class="alert alert-danger">${message}</div>
+      `;
+    }
+  </script>
+</body>
+</html>

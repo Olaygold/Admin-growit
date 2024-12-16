@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Deposits</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #6c757d;
+      color: #fff;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .no-data {
+      text-align: center;
+      font-size: 18px;
+      color: #888;
+    }
+    .search-bar {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1 class="text-center">All Deposits</h1>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search by Email">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User Email</th>
+        <th>Deposit Amount (Naira)</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="depositTable">
+      <tr><td colspan="5" class="no-data">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+  // Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAELWzVQZiw2PxbNUT3-YK4a6KPHfYkdZ4",
+    authDomain: "work-98965.firebaseapp.com",
+    databaseURL: "https://work-98965-default-rtdb.firebaseio.com",
+    projectId: "work-98965",
+    storageBucket: "work-98965.appspot.com",
+    messagingSenderId: "755408416828",
+    appId: "1:755408416828:web:59f72561f27fb9ffa01339"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth();
+
+  // Global variable to hold all deposits
+  let allDeposits = [];
+
+  // Fetch deposits from Firebase
+  async function fetchDeposits() {
+    const depositTable = document.getElementById("depositTable");
+    const depositsRef = ref(db, "deposits");
+
+    try {
+      const snapshot = await get(depositsRef);
+
+      if (snapshot.exists()) {
+        const deposits = snapshot.val();
+        allDeposits = [];
+        let tableRows = "";
+        let index = 1;
+
+        for (const userId in deposits) {
+          for (const depositId in deposits[userId]) {
+            const deposit = deposits[userId][depositId];
+            const status = deposit.status || "Pending"; // Get status from the deposit node, default to "Pending" if not set
+
+            allDeposits.push({
+              index: index,
+              userEmail: deposit.userEmail || "No Email",
+              amount: deposit.amount || 0,
+              timestamp: new Date(deposit.timestamp).toLocaleString(),
+              userId: userId,
+              status: status
+            });
+            tableRows += `
+              <tr>
+                <td>${index++}</td>
+                <td>${deposit.userEmail || "No Email"}</td>
+                <td>${deposit.amount || 0}</td>
+                <td>${new Date(deposit.timestamp).toLocaleString()}</td>
+                <td>${status}</td>
+              </tr>
+            `;
+          }
+        }
+
+        depositTable.innerHTML = tableRows || `<tr><td colspan="5" class="no-data">No deposits found.</td></tr>`;
+      } else {
+        depositTable.innerHTML = `<tr><td colspan="5" class="no-data">No deposits found.</td></tr>`;
+      }
+    } catch (error) {
+      console.error("Error fetching deposits:", error);
+      alert("Failed to load deposit data.");
+    }
+  }
+
+  // Search deposits by email
+  function searchDeposits() {
+    const searchInput = document.getElementById("searchInput").value.toLowerCase();
+    const depositTable = document.getElementById("depositTable");
+    
+    // Filter deposits by email
+    const filteredDeposits = allDeposits.filter(deposit =>
+      deposit.userEmail.toLowerCase().includes(searchInput)
+    );
+
+    let tableRows = "";
+    if (filteredDeposits.length > 0) {
+      filteredDeposits.forEach(deposit => {
+        tableRows += `
+          <tr>
+            <td>${deposit.index}</td>
+            <td>${deposit.userEmail}</td>
+            <td>${deposit.amount}</td>
+            <td>${deposit.timestamp}</td>
+            <td>${deposit.status}</td>
+          </tr>
+        `;
+      });
+    } else {
+      tableRows = `<tr><td colspan="5" class="no-data">No results found.</td></tr>`;
+    }
+
+    depositTable.innerHTML = tableRows;
+  }
+
+  // Add event listener to the search input
+  document.getElementById("searchInput").addEventListener("input", searchDeposits);
+
+  // Check if the user is authenticated and is an admin
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Check if the logged-in user is an admin (based on email)
+      if (user.email !== "wtf@gmail.com") {
+        alert("You must be an admin to access this page.");
+        window.location = 'login.html'; // Redirect to login page if not an admin
+      } else {
+        fetchDeposits(); // Fetch deposits if admin is logged in
+      }
+    } else {
+      alert("You must be logged in to access this page.");
+      window.location = 'login.html'; // Redirect to login page if not logged in
+    }
+  });
+
+  // Fetch deposits on page load
+  window.onload = fetchDeposits;
+</script>
+</body>
+</html>
