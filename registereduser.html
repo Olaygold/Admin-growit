@@ -22,6 +22,11 @@
       display: flex;
       gap: 10px;
     }
+    .logout-btn {
+      cursor: pointer;
+      color: #007bff;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -29,6 +34,7 @@
     <div class="header">
       <h1>All Registered Users</h1>
       <div>Total Users: <span id="totalUsers">0</span></div>
+      <span class="logout-btn" id="logoutBtn">Logout</span>
     </div>
     <div class="search-container">
       <input type="text" id="searchInput" class="form-control" placeholder="Search by email or UID">
@@ -58,6 +64,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
     import { getDatabase, ref, get, query, orderByKey } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -71,12 +78,33 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
 
     const userTableBody = document.getElementById("userTableBody");
     const totalUsers = document.getElementById("totalUsers");
     const searchInput = document.getElementById("searchInput");
     const searchButton = document.getElementById("searchButton");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Redirect unauthenticated users
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("You are not authenticated. Redirecting to login...");
+        window.location.href = "login.html"; // Replace with your login page URL
+      }
+    });
+
+    // Logout functionality
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "login.html"; // Replace with your login page URL
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    });
 
     // Fetch all users from the database
     async function fetchUsers() {
