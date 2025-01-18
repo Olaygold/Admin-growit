@@ -4,281 +4,182 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Withdrawals</title>
-  <link rel="stylesheet" href="style.css">
   <style>
-      /* Global Styles */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  margin: 0;
-  padding: 0;
-}
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
 
-.container {
-  width: 80%;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+    .container {
+      width: 80%;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-h1 {
-  text-align: center;
-  color: #333;
-}
+    h1 {
+      text-align: center;
+      color: #333;
+    }
 
-h2 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 20px;
-}
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
 
-a {
-  color: #007bff;
-  text-decoration: none;
-  font-size: 1rem;
-  display: inline-block;
-  margin-bottom: 20px;
-}
+    .withdrawal-item {
+      background-color: #fff;
+      padding: 15px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    }
 
-a:hover {
-  text-decoration: underline;
-}
+    .withdrawal-item p {
+      font-size: 14px;
+      color: #333;
+      margin: 5px 0;
+    }
 
-/* Withdrawal Items */
-#withdrawals-list {
-  margin-top: 20px;
-}
-
-.withdrawal-item {
-  background-color: #fff;
-  padding: 15px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
-}
-
-.withdrawal-item p {
-  font-size: 14px;
-  color: #333;
-  margin: 5px 0;
-}
-
-.withdrawal-item strong {
-  font-weight: bold;
-}
-
-.withdrawal-item button {
-  background-color: #28a745;
-  color: #fff;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.withdrawal-item button:hover {
-  background-color: #218838;
-}
-
-.withdrawal-item button:active {
-  background-color: #1e7e34;
-}
-
-.withdrawal-item .failed {
-  background-color: #dc3545;
-}
-
-.withdrawal-item .failed:hover {
-  background-color: #c82333;
-}
-
-.withdrawal-item .failed:active {
-  background-color: #bd2130;
-}
-
-/* No Data Found Message */
-#withdrawals-list p {
-  font-size: 1.2rem;
-  color: #888;
-  text-align: center;
-  margin-top: 50px;
-}
+    .no-data {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #888;
+      margin-top: 50px;
+    }
   </style>
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAELWzVQZiw2PxbNUT3-YK4a6KPHfYkdZ4",
-    authDomain: "work-98965.firebaseapp.com",
-    databaseURL: "https://work-98965-default-rtdb.firebaseio.com",
-    projectId: "work-98965",
-    storageBucket: "work-98965.appspot.com",
-    messagingSenderId: "755408416828",
-    appId: "1:755408416828:web:59f72561f27fb9ffa01339"
-  };
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAELWzVQZiw2PxbNUT3-YK4a6KPHfYkdZ4",
+      authDomain: "work-98965.firebaseapp.com",
+      databaseURL: "https://work-98965-default-rtdb.firebaseio.com",
+      projectId: "work-98965",
+      storageBucket: "work-98965.appspot.com",
+      messagingSenderId: "755408416828",
+      appId: "1:755408416828:web:59f72561f27fb9ffa01339"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-  // Authentication check on page load
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("User is signed in:", user.email);
-      // Proceed with loading withdrawals if authenticated
-      loadWithdrawals();
-    } else {
-      console.log("No user signed in.");
-      // Redirect to login page if not authenticated
-      window.location.href = "login.html";
-    }
-  });
-
-  // Sign out function
-  function signOutUser() {
-    signOut(auth).then(() => {
-      console.log("User signed out.");
-      window.location.href = "login.html"; // Redirect to login page after sign out
-    }).catch((error) => {
-      console.error("Error signing out:", error);
+    // Authenticate user and load withdrawals
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadWithdrawals(); // Load all withdrawals initially
+      } else {
+        window.location.href = "login.html"; // Redirect to login page if not authenticated
+      }
     });
-  }
 
-  // Load all withdrawal requests from the users node
-  function loadWithdrawals() {
-    const usersRef = ref(db, "users");
+    // Load all withdrawals
+    function loadWithdrawals() {
+      const withdrawalsList = document.getElementById("withdrawals-list");
+      withdrawalsList.innerHTML = ""; // Clear previous data
 
-    onValue(usersRef, (snapshot) => {
-      const newWithdrawalsList = document.getElementById("new-withdrawals-list");
-      const oldWithdrawalsList = document.getElementById("old-withdrawals-list");
+      const usersRef = ref(db, "users");
+      onValue(usersRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          withdrawalsList.innerHTML = ""; // Clear previous data
 
-      newWithdrawalsList.innerHTML = ""; // Clear previous data for new withdrawals
-      oldWithdrawalsList.innerHTML = ""; // Clear previous data for old withdrawals
-
-      if (snapshot.exists()) {
-        const users = snapshot.val();
-        const newWithdrawals = [];
-        const oldWithdrawals = [];
-
-        // Loop through each user and their withdrawals
-        for (const userId in users) {
-          const user = users[userId];
-
-          if (user.withdrawals) {
-            for (const withdrawalId in user.withdrawals) {
-              const withdrawal = user.withdrawals[withdrawalId];
-
-              // Check if timestamp exists and separate new and old withdrawals
-              if (withdrawal.timestamp) {
-                const currentTime = Date.now();
-                const oneDay = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-
-                // If the withdrawal is within the last 24 hours, it's a new request
-                if (currentTime - withdrawal.timestamp <= oneDay) {
-                  newWithdrawals.push({ userId, withdrawalId, withdrawal });
-                } else {
-                  oldWithdrawals.push({ userId, withdrawalId, withdrawal });
-                }
+          for (const userId in users) {
+            const user = users[userId];
+            if (user.withdrawals) {
+              for (const withdrawalId in user.withdrawals) {
+                const withdrawal = user.withdrawals[withdrawalId];
+                const withdrawalHTML = `
+                  <div class="withdrawal-item">
+                    <p><strong>User ID:</strong> ${userId}</p>
+                    <p><strong>Account Name:</strong> ${withdrawal.accountName}</p>
+                    <p><strong>Bank Name:</strong> ${withdrawal.bankName}</p>
+                    <p><strong>Account Number:</strong> ${withdrawal.accountNumber}</p>
+                    <p><strong>Withdrawal Amount:</strong> ${withdrawal.withdrawalAmount} Naira</p>
+                    <p><strong>Status:</strong> ${withdrawal.status}</p>
+                  </div>
+                `;
+                withdrawalsList.innerHTML += withdrawalHTML;
               }
             }
           }
+        } else {
+          withdrawalsList.innerHTML = `<p class="no-data">No withdrawal requests found.</p>`;
         }
+      }, (error) => {
+        console.error("Error fetching data: ", error.message);
+      });
+    }
 
-        // Render new withdrawals first
-        renderWithdrawals(newWithdrawals, newWithdrawalsList);
-        renderWithdrawals(oldWithdrawals, oldWithdrawalsList);
+    // Search withdrawals by user ID
+    function searchWithdrawals() {
+      const searchInput = document.getElementById("search-input").value.trim();
+      const withdrawalsList = document.getElementById("withdrawals-list");
+      withdrawalsList.innerHTML = ""; // Clear previous data
 
-      } else {
-        newWithdrawalsList.innerHTML = "<p>No new withdrawal requests found.</p>";
-        oldWithdrawalsList.innerHTML = "<p>No old withdrawal requests found.</p>";
-      }
-    });
-  }
-
-  // Render the withdrawals in respective lists
-  function renderWithdrawals(withdrawalsArray, withdrawalsList) {
-    withdrawalsArray.forEach(({ userId, withdrawalId, withdrawal }) => {
-      const withdrawalHTML = `
-        <div class="withdrawal-item">
-          <p><strong>User Email:</strong> ${withdrawal.email || "Not Provided"}</p>
-          <p><strong>Account Name:</strong> ${withdrawal.accountName}</p>
-          <p><strong>Bank Name:</strong> ${withdrawal.bankName}</p>
-          <p><strong>Account Number:</strong> ${withdrawal.accountNumber}</p>
-          <p><strong>Withdrawal Amount:</strong> ${withdrawal.withdrawalAmount} Naira</p>
-          <p><strong>Status:</strong> ${withdrawal.status}</p>
-        </div>
-      `;
-      withdrawalsList.innerHTML += withdrawalHTML;
-    });
-  }
-
-  // Mark a withdrawal as Paid or Failed without moving it to history
-  window.markWithdrawal = function (userId, withdrawalId, status) {
-    const withdrawalRef = ref(db, `users/${userId}/withdrawals/${withdrawalId}`);
-
-    // Fetch the withdrawal details
-    get(withdrawalRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const withdrawal = snapshot.val();
-
-        // Refund balance if marking as Failed
-        if (status === "Failed") {
-          const userRef = ref(db, `users/${userId}`);
-          get(userRef).then((userSnapshot) => {
-            if (userSnapshot.exists()) {
-              const user = userSnapshot.val();
-              const updatedBalance = user.balance + withdrawal.withdrawalAmount;
-
-              // Update the user's balance
-              update(userRef, { balance: updatedBalance }).then(() => {
-                console.log("Balance refunded to user.");
-              }).catch((error) => {
-                console.error("Error refunding balance:", error);
-              });
+      if (searchInput) {
+        const userRef = ref(db, `users/${searchInput}`);
+        get(userRef).then((snapshot) => {
+          if (snapshot.exists()) {
+            const user = snapshot.val();
+            if (user.withdrawals) {
+              for (const withdrawalId in user.withdrawals) {
+                const withdrawal = user.withdrawals[withdrawalId];
+                const withdrawalHTML = `
+                  <div class="withdrawal-item">
+                    <p><strong>User ID:</strong> ${searchInput}</p>
+                    <p><strong>Account Name:</strong> ${withdrawal.accountName}</p>
+                    <p><strong>Bank Name:</strong> ${withdrawal.bankName}</p>
+                    <p><strong>Account Number:</strong> ${withdrawal.accountNumber}</p>
+                    <p><strong>Withdrawal Amount:</strong> ${withdrawal.withdrawalAmount} Naira</p>
+                    <p><strong>Status:</strong> ${withdrawal.status}</p>
+                  </div>
+                `;
+                withdrawalsList.innerHTML += withdrawalHTML;
+              }
+            } else {
+              withdrawalsList.innerHTML = `<p class="no-data">No withdrawals found for this user.</p>`;
             }
-          });
-        }
-
-        // Update the withdrawal status and keep it in the withdrawals node
-        update(withdrawalRef, { status: status }).then(() => {
-          console.log(`Withdrawal marked as ${status}.`);
-          alert(`Withdrawal marked as ${status}.`);
+          } else {
+            withdrawalsList.innerHTML = `<p class="no-data">User not found.</p>`;
+          }
         }).catch((error) => {
-          console.error("Error updating withdrawal status:", error);
+          console.error("Error fetching user data: ", error.message);
         });
       } else {
-        alert("Withdrawal not found.");
+        loadWithdrawals(); // Reload all withdrawals if search is empty
       }
-    });
-  };
+    }
 
-  // Load withdrawals on page load
-  window.onload = loadWithdrawals;
-</script>
+    // Load all withdrawals on page load
+    window.onload = function() {
+      loadWithdrawals();
+      document.getElementById("search-input").addEventListener("input", searchWithdrawals);
+    };
+  </script>
 </head>
 <body>
   <div class="container">
     <h1>Admin Withdrawals</h1>
-    <a href="history.html">View withdrawal history</a>
-    <h2>Withdrawal Requests</h2>
-
-    <h3>New Withdrawal Requests</h3>
-    <div id="new-withdrawals-list">
-      <!-- New withdrawals will be displayed here -->
-    </div>
-
-    <h3>Old Withdrawal Requests</h3>
-    <div id="old-withdrawals-list">
-      <!-- Old withdrawals will be displayed here -->
-    </div>
+    <input
+      type="text"
+      id="search-input"
+      placeholder="Enter User ID to search withdrawals"
+    />
+    <div id="withdrawals-list"></div>
   </div>
 </body>
 </html>
